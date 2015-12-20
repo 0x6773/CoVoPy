@@ -5,6 +5,8 @@ import optparse
 from os.path import basename
 from urlparse import urlsplit
 from bs4 import BeautifulSoup
+from PIL import Image
+from PIL.ExifTags import TAGS
 
 def findImages(url):
     print '[ + ] Getting HTML of %s' % url
@@ -25,9 +27,10 @@ def downloadImage(imgTag):
         imgOpen = urllib2.urlopen(imgSrc)
         imgInfo = imgOpen.info()
         imgSize = int(imgInfo.getheaders('Content-Length')[0]) / 1024
+        imgType = imgInfo.getheaders('Content-Type')[0]
         imgFileName = basename(urlsplit(imgSrc)[2])
-        print '[ + ] Image FileName : %s, Image Size : %d KB' % (imgFileName, imgSize)
-        print '[ + ] Ready download ([Y]/N) : ',
+        print '[ + ] Image FileName : %s, Type : %s, Image Size : %d KB' % (imgFileName, imgType, imgSize)
+        print '[ i ] Ready download ([Y]/N) : ',
         opt = raw_input()
         if opt == 'n' or opt == 'N':
             print '[ - ] Not Downloading!'
@@ -38,10 +41,28 @@ def downloadImage(imgTag):
         imgFile = open(imgFileName, 'wb')
         imgFile.write(imgContent)
         imgFile.close()
+        print '[ + ] Saved to %s' % imgFileName
         return imgFileName
     except Exception, e:
         print 'Exception occurred : %s' % str(e)
-        return ''
+
+def testForExif(imgFileName):
+    try:
+        exifData = {}
+        imgFile = Image.open(imgFileName)
+        info = imgFile._getexif()
+        if info:
+            for (tag, value) in info.items():
+                decoded = TAGS.get(tag, tag)
+                exifData[decoded] = value
+            exifGPS = exifData['GPSInfo']
+            if exifGPS:
+                print '[ * ] %s contains GPS MetaData' % imgFileName
+    except AttributeError, ae:
+        print 'Exception occurred : %s' % str(ae)
+    except Exception, e:
+        print 'Exception occurred : %s' % str(e)
+
 
 def main():
     parser = optparse.OptionParser('usage %prog -u <URL>')
@@ -52,7 +73,9 @@ def main():
         print parser.usage
         exit(0)
     for imgTag in findImages(urlName):
-        downloadImage(imgTag)
+        imgFileName = downloadImage(imgTag)
+        if imgFileName:
+            testForExif(imgFileName)
 
 if __name__ == '__main__':
     main()
