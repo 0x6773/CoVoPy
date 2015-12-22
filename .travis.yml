@@ -1,0 +1,11 @@
+language:
+  python
+python:
+  - "2.7"
+install:
+  - sudo apt-get update
+  - sudo apt-get install zsh
+script:
+  - test_travis/test_travis.sh
+notifications:
+  email: false
