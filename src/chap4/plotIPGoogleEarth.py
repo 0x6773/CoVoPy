@@ -7,33 +7,37 @@ import optparse
 
 gi = pygeoip.GeoIP('/opt/GeoIP/Geo.dat')
 
-def retGeoStr(ip):
+def retKML(ip):
+    rec = gi.record_by_name(ip)
     try:
-        rec = gi.record_by_name(ip)
-        city = rec['city']
-        country = rec['country_code3']
-        if city != '':
-            geoLoc = city + ', ' + country
-        else:
-            geoLoc = country
-        return geoLoc
+        longitude = rec['longitude']
+        latitude = rec['latitude']
+        kml = (
+        '<Placemark>\n'
+        '<name>%s</name>\n'
+        '<Point>\n'
+        '<coordinates>%6f,%6f</coordinates>\n'
+        '</Point>\n'
+        '</Placemark>\n'
+        ) % (ip, longitude, latitude)
+        return kml
     except:
-        return 'Unregistered'
+        return ''
 
-def printPcap(pcap):
-    st = set()
+def plotIPs(pcap):
+    kmlPts = ''
     for (ts, buf) in pcap:
         try:
             eth = dpkt.ethernet.Ethernet(buf)
             ip = eth.data
             src = socket.inet_ntoa(ip.src)
+            srcKML = retKML(src)
             dst = socket.inet_ntoa(ip.dst)
-            if not (src, dst) in st:
-                print '[ + ] Src : %s(%s) --> Dst : %s(%s)' % \
-                    (src, retGeoStr(src), dst, retGeoStr(dst))
-                st.add((src, dst))
+            srcKML = retKML(dst)
+            kmlPts = kmlPts + srcKML + dstKML
         except:
             pass
+    return kmlPts
 
 def main():
     parser = optparse.OptionParser('usage %prog -p <pcap file>')
@@ -45,8 +49,10 @@ def main():
     pcapFile = options.pcapFile
     f = open(pcapFile)
     pcap = dpkt.pcap.Reader(f)
-    printPcap(pcap)
-
+    kmlheader = '<?xml version = "1.0" encoding = "UTF-8"?>\n<kml xmlns = "http://www.opengis.net/kml/2.2">\n<Document>\n'
+    kmlfooter = '</Document>\n</kml>\n'
+    kmldoc = kmlheader + plotIPs(pcap) + kmlfooter
+    print kmldoc
 
 if __name__ == '__main__':
     main()

@@ -7,6 +7,9 @@ gi = pygeoip.GeoIP('/opt/GeoIP/Geo.dat')
 
 def printRecord(tgt):
     rec = gi.record_by_name(tgt)
+    if rec == None:
+        print 'Not Found!'
+        return
     print 'Details for %s' % tgt
     for key in rec.keys():
         print '%s : %s' %(key, rec[key])
@@ -20,7 +23,7 @@ def main():
         print parser.usage
         exit(0)
     else:
-        print printRecord(ipAddr)
+        printRecord(ipAddr)
 
 if __name__ == '__main__':
     main()
